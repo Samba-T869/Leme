@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Come On</title>
+  <style>
+  body{
+    background: black;
+    margin: 0;
+    padding: 0;
+  }
+  .messages{
+    display: flex;
+    flex-direction: column;
+    padding: 25px;
+    font-size: 2.5rem;
+    margin-bottom: 46px;
+    font-weight: 500;
+    overflow-y: auto;
+  }
+  .msgDiv{
+    max-width: 80%;
+    word-wrap: break-word;
+  }
+  
+  .received{
+    align-self: flex-end;
+    color: white;
+  }
+  .sent{
+    color: green;
+    align-self: flex-start;
+  }
+  
+  .input{
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    border-top: 1px solid rgba(0,255,0,0.7);
+    /*justify-content: space-between;*/
+  }
+  .input input{
+    width: 70%;
+    height: 55px;
+    padding: 10px;
+    font-size: 2.2rem;
+    margin-left: 20px;
+    color: green;
+    outline: none;
+  }
+  .input button{
+    margin-left: 30px;
+    padding: 25px;
+    border-radius: 5px;
+    font-size: 1.5rem;
+    color: green;
+    border: none;
+  }
+  </style>
+</head>
+<body>
+  <div class="messages">
+    <!--Messages will be added here-->
+  </div>
+  
+  <div class="input">
+  <input type="text" placeholder="Type here.. ." id="text">
+  <button>Send</button>
+  </div>
+  
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script>
+  const socket = io(window.location.origin);
+  const msg = document.querySelector('.messages');
+  const Input = document.querySelector('#text');
+  const btn = document.querySelector('button');
+  let userId = Math.random()* 1000;
+  
+  function send(){
+    const message = Input.value.trim();
+    
+    if(message){
+    socket.emit('new_message',{ 
+      text: message,
+      sender_id: userId
+    });
+    }
+    
+    Input.value = '';
+  }
+  
+  function add(message, type){
+    const msgDiv = document.createElement('div');
+    
+    msgDiv.setAttribute('class', `msgDiv ${type}`);
+    
+    msgDiv.innerHTML =`
+    <p>${message}</p>
+    `;
+    
+    msg.appendChild(msgDiv);
+    msg.scrollTop = msg.scrollHeight;
+  }
+  
+  socket.on('incoming_message', (data)=>{
+    if( data.sender_id === userId){
+      add(data.text, 'sent');
+    }
+    else{
+      add(data.text, 'received');
+    }
+  });
+  
+  btn.addEventListener('click', send);
+  
+  Input.addEventListener('keypress', (e)=>{
+    if( e.key === 'Enter'){
+      send();
+    }
+  });
+  </script>
+</body>
+</html>
