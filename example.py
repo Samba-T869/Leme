@@ -3,23 +3,30 @@ import os
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'thedaysofthejaguar'
-socketio = SocketIO(app)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'thedaysofthejaguar')
+
+# Add CORS configuration for Render
+socketio = SocketIO(app, 
+                   cors_allowed_origins="*",  # Allow all origins (adjust for production)
+                   async_mode='eventlet',  # Explicitly set async mode
+                   logger=True,  # Enable logging for debugging
+                   engineio_logger=True)
 
 @app.route('/')
 def home():
-	return render_template('chat.html')
+    return render_template('chat.html')
 
 @socketio.on('new_message')
 def handle_message(data):
-	sender_id = data.get('sender_id')
-	message = data.get('text')
-	
-	emit('incoming_message', {
-	'sender_id': sender_id,
-	'text': message,
-	'type': 'broadcast'
-	}, broadcast =True)
+    sender_id = data.get('sender_id')
+    message = data.get('text')
+    
+    emit('incoming_message', {
+        'sender_id': sender_id,
+        'text': message,
+        'type': 'broadcast'
+    }, broadcast=True)
 
 if __name__ == '__main__':
-	socketio.run(app,port=9000, debug=True)
+    port = int(os.environ.get('PORT', 9000))
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)  # debug=False for production
