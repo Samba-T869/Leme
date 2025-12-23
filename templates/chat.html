@@ -74,7 +74,17 @@
   
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script>
-  const socket = io(window.location.origin);
+ // Get the current protocol and host
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const host = window.location.host;
+
+// Connect with explicit WebSocket configuration
+const socket = io(`${protocol}//${host}`, {
+  transports: ['websocket', 'polling'],  // Explicitly specify transports
+  reconnection: true,
+  reconnectionAttempts: 5
+});
+  
   const msg = document.querySelector('.messages');
   const Input = document.querySelector('#text');
   const btn = document.querySelector('button');
@@ -105,7 +115,15 @@
     msg.appendChild(msgDiv);
     msg.scrollTop = msg.scrollHeight;
   }
-  
+
+   socket.on('connect', () => {
+   console.log('Connected to server with ID:', socket.id);
+   });
+
+socket.on('connect_error', (error) => {
+  console.error('Connection error:', error);
+});
+    
   socket.on('incoming_message', (data)=>{
     if( data.sender_id === userId){
       add(data.text, 'sent');
