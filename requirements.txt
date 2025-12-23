@@ -4,3 +4,4 @@ python-socketio==5.9.0
 eventlet==0.33.3
 Werkzeug==2.3.7
 cython==3.0.10
+gunicorn==21.2.0
