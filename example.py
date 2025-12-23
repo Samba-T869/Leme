@@ -23,4 +23,4 @@ def handle_message(data):
 
 if __name__ == '__main__':
 	port = int(os.environ.get('PORT', 9000))
-	socketio.run(app, port=port, debug=False)
+	socketio.run(app, allow_unsafe_werkzeug=True port=port, debug=False)
