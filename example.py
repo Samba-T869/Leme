@@ -8,7 +8,6 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'thedaysofthejaguar')
 # Add CORS configuration for Render
 socketio = SocketIO(app, 
                    cors_allowed_origins="*",  # Allow all origins (adjust for production)
-                   async_mode='eventlet',  # Explicitly set async mode
                    logger=True,  # Enable logging for debugging
                    engineio_logger=True)
 
