@@ -1,9 +1,12 @@
 from flask import Flask, render_template
 import os
 from flask_socketio import SocketIO, emit
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'thedaysofthejaguar')
+
+CORS(app)
 
 # Add CORS configuration for Render
 socketio = SocketIO(app, 
