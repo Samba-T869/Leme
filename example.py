@@ -6,7 +6,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'thedaysofthejaguar')
 
-CORS(app)
+#CORS(app)
 
 # Add CORS configuration for Render
 socketio = SocketIO(app, 
