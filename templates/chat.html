@@ -84,7 +84,7 @@ const socket = io();
   const msg = document.querySelector('.messages');
   const Input = document.querySelector('#text');
   const btn = document.querySelector('button');
-  let userId = Math.random()* 1000;
+  let userId = Math.floor(Math.random() * 1000);
   
   function send(){
     const message = Input.value.trim();
