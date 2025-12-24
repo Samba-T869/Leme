@@ -79,7 +79,11 @@ const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const host = window.location.host;
 
 // Connect with explicit WebSocket configuration
-const socket = io();
+const socket = io(`${protocol}//${host}`, {
+  transports: ['websocket', 'polling'],  // Explicitly specify transports
+  reconnection: true,
+  reconnectionAttempts: 5
+});
   
   const msg = document.querySelector('.messages');
   const Input = document.querySelector('#text');
