@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Real-Time Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 90vh;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    #messages {
+      flex: 1;
+      border: 1px solid #ddd;
+      background: white;
+      padding: 20px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+    
+    .message {
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 18px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+    
+    .message.received {
+      background: #e9ecef;
+      margin-right: auto;
+    }
+    
+    .message.sent {
+      background: #007bff;
+      color: white;
+      margin-left: auto;
+      text-align: right;
+    }
+    
+    .message.system {
+      background: #f8f9fa;
+      color: #6c757d;
+      font-style: italic;
+      text-align: center;
+      max-width: 100%;
+      border: 1px dashed #dee2e6;
+    }
+    
+    .input-container {
+      display: flex;
+      gap: 10px;
+    }
+    
+    #messageInput {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    
+    #sendBtn {
+      padding: 12px 24px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    
+    #sendBtn:hover {
+      background: #0056b3;
+    }
+    
+    #sendBtn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .status {
+      text-align: center;
+      color: #666;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Real-Time Chat</h1>
+    <div class="status" id="status">Connecting...</div>
+    <div id="messages"></div>
+    <div class="input-container">
+      <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off">
+      <button id="sendBtn" disabled>Send</button>
+    </div>
+  </div>
+
+  <script>
+  const messagesContainer = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const statusDiv = document.getElementById('status');
+    
+    // Determine WebSocket URL
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    
+    let ws = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    
+    function connect() {
+      ws = new WebSocket(wsUrl);
+      
+      ws.onopen = () => {
+        reconnectAttempts = 0;
+        sendBtn.disabled = false;
+        statusDiv.textContent = 'Connected';
+        statusDiv.style.color = '#28a745';
+        addSystemMessage('Connected to server');
+      };
+      
+      ws.onmessage = (event) => {
+        addMessage(event.data, 'received');
+      };
+      
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        statusDiv.textContent = 'Connection error';
+        statusDiv.style.color = '#dc3545';
+      };
+      
+      ws.onclose = () => {
+        sendBtn.disabled = true;
+        statusDiv.textContent = 'Disconnected - Reconnecting...';
+        statusDiv.style.color = '#ffc107';
+        addSystemMessage('Disconnected from server');
+        
+        // Attempt to reconnect
+        if (reconnectAttempts < maxReconnectAttempts) {
+          reconnectAttempts++;
+          setTimeout(() => {
+            connect();
+          }, 3000 * reconnectAttempts); // Exponential backoff
+        }
+      };
+    }
+    
+    function sendMessage() {
+      const message = messageInput.value.trim();
+      if (message && ws && ws.readyState === WebSocket.OPEN) {
+        addMessage(message, 'sent');
+        ws.send(message);
+        messageInput.value = '';
+        messageInput.focus();
+      }
+    }
+    
+    function addMessage(text, type) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      messageDiv.textContent = text;
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  
+  function addSystemMessage(text) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message system';
+      messageDiv.textContent = text;
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // Event listeners
+    sendBtn.addEventListener('click', sendMessage);
+    
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    
+    // Initial connection
+    connect();
+  </script>
+</body>
+</html>
