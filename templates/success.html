@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="payment-container">
+            <div class="payment-header">
+                <h1><i class="fas fa-check-circle" style="color: #28a745;"></i> Payment Successful!</h1>
+                <p>Check your WhatsApp for confirmation token</p>
+            </div>
+
+            <div class="status-message success" id="statusMessage">
+                Payment received successfully!
+            </div>
+
+            <div id="confirmationSection">
+                <div class="form-group">
+                    <label for="userName"><i class="fas fa-user"></i> Your Name</label>
+                    <input type="text" id="userName" placeholder="Enter your full name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmationToken"><i class="fas fa-key"></i> Confirmation Token</label>
+                    <input type="text" id="confirmationToken" 
+                           placeholder="Enter 12-digit token from WhatsApp" 
+                           maxlength="12"
+                           required>
+                    <small>Check your WhatsApp messages for the token</small>
+                </div>
+
+                <button class="payment-btn" onclick="confirmToken()">
+                    <i class="fas fa-check"></i> Confirm & Join Group
+                </button>
+
+                <div class="payment-instructions" style="margin-top: 20px;">
+                    <h3><i class="fas fa-info-circle"></i> Next Steps</h3>
+                    <ol>
+                        <li>Check WhatsApp for your confirmation token</li>
+                        <li>Enter your name and the token above</li>
+                        <li>Click "Confirm & Join Group"</li>
+                        <li>You will receive the group invitation shortly</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div id="successMessage" style="display: none;">
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-check-circle fa-5x" style="color: #28a745;"></i>
+                    <h2>Confirmation Successful!</h2>
+                    <p>You will receive the WhatsApp group invitation soon.</p>
+                    <p>Thank you for joining our community!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const transactionId = "{{ transaction_id }}";
+        const whatsappNumber = "{{ whatsapp_number }}";
+
+        async function confirmToken() {
+            const userName = document.getElementById('userName').value;
+            const token = document.getElementById('confirmationToken').value;
+
+            if (!userName || !token) {
+                showStatus('Please enter both name and token', 'error');
+                return;
+            }
+
+            if (token.length !== 12) {
+                showStatus('Token must be 12 characters', 'error');
+                return;
+            }
+
+            showStatus('Confirming token...', 'info');
+
+            try {
+                const response = await fetch('/api/confirm-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        transaction_id: transactionId,
+                        token: token,
+                        name: userName
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('confirmationSection').style.display = 'none';
+                    document.getElementById('successMessage').style.display = 'block';
+                    showStatus('Confirmation successful!', 'success');
+                } else {
+                    showStatus(data.error || 'Confirmation failed', 'error');
+                }
+            } catch (error) {
+                showStatus('Network error. Please try again.', 'error');
+                console.error('Confirmation error:', error);
+              }
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusElement = document.getElementById('statusMessage');
+            if (statusElement) {
+                statusElement.textContent = message;
+                statusElement.className = 'status-message ' + type;
+                statusElement.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

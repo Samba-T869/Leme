@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADMIN LOGIN</title>
+  <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+      <div class="login-content">
+              <h2><i class="fas fa-lock"></i> Admin Login</h2>
+              <form method="post" action="/login" enctype="multipart/form-data">
+                <input type="password" id="adminPassword" placeholder="Enter admin password" class="invitation-input" name="password">
+                
+                <div class="status-message" id="loginStatus"></div>
+                <button class="payment-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
+              </form>
+       </div>
+  
+  <script></script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="admin-container" id="adminPanel">
+            <div class="admin-header">
+                <h1><i class="fab fa-whatsapp" style="color: #25D366;"></i> Admin Panel</h1>
+                <form method="get" action="/logout">
+                <button class="admin-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </form>
+            </div>
+
+            <div class="status-message info" id="adminStatus">
+                Connected to server. Loading paid users...
+            </div>
+
+            <div class="admin-stats">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+                    <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; text-align: center;">
+                        <h3 style="color: #1976d2;">Total Revenue</h3>
+                        <p style="font-size: 24px; font-weight: bold;" id="totalPaid">$0</p>
+                    </div>
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; text-align: center;">
+                        <h3 style="color: #388e3c;">Total Paid</h3>
+                        <p style="font-size: 24px; font-weight: bold;" id="totalPaid">$0</p>
+                    </div>
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; text-align: center;">
+                        <h3 style="color: #388e3c;">Total Users</h3>
+                        <p style="font-size: 24px; font-weight: bold;" id="totalUsers">0</p>
+                    </div>
+                    <div style="background: #fff3e0; padding: 20px; border-radius: 10px; text-align: center;">
+                        <h3 style="color: #f57c00;">Today</h3>
+                        <p style="font-size: 24px; font-weight: bold;" id="todayUsers">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <h2><i class="fas fa-user-plus"></i> Send Invitation</h2>
+                <div class="invitation-form">
+                    <input type="tel" class="invitation-input" id="invitationNumber" placeholder="WhatsApp Number (e.g., +255734567890)">
+                    <input type="text" class="invitation-input" id="invitationLink" placeholder="WhatsApp Group Link">
+                    <button class="send-invite-btn" onclick="sendInvitation()"><i class="fas fa-paper-plane"></i> Send Invite</button>
+                </div>
+            </div>
+
+         <div class="users-list">
+          <h2><i class="fas fa-users"></i>All Users</h2>
+              <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                <button class="payment-btn" onclick="loadAllUsers()" style="padding: 8px 15px;"><i class="fas fa-users"></i> All Users</button>
+                <button class="payment-btn" onclick="loadPaidUsers()" style="padding: 8px 15px; background: #28a745;"><i class="fas fa-check-circle"></i> Confirmed Users</button>
+               </div>
+                    
+    <table class="users-table">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Name</th>
+                <th>WhatsApp Number</th>
+                <th>Amount</th>
+                <th>Payment Date</th>
+                <th>Invitation</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="usersTableBody">
+            <tr>
+             <td colspan="7" style="text-align: center; padding: 40px;">
+             <i class="fas fa-spinner fa-spin fa-2x" style="color: #667eea;"></i>
+             <p>Loading users...</p>
+              </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+            <div class="export-section" style="margin-top: 30px;">
+                <button class="payment-btn" onclick="exportToCSV()" 
+                        style="background: #17a2b8;">
+                    <i class="fas fa-download"></i> Export to CSV
+                </button>
+                <button class="payment-btn" onclick="refreshUsers()" 
+                        style="background: #6c757d; margin-left: 10px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+    const API_BASE_URL = window.location.origin;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAllUsers();
+    });
+
+    async function loadAllUsers() {
+        showAdminStatus('Loading all users...', 'info');
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admin/paid-users`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include' // Important for session cookies
+            });
+            
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                updateUsersTable(data.users);
+                updateStats(data.users);
+                showAdminStatus(`Loaded ${data.users.length} users`, 'success');
+            } else {
+                showAdminStatus('Error loading users: ' + (data.error || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            showAdminStatus('Network error. Please try again.', 'error');
+            console.error('Error loading users:', error);
+        }
+    }
+
+    async function loadPaidUsers() {
+        showAdminStatus('Loading confirmed users...', 'info');
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admin/paid-users`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include'
+            });
+            
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Filter to only show confirmed users
+                const confirmedUsers = data.users.filter(user => user.name && user.name !== "Not confirmed");
+                updateUsersTable(confirmedUsers);
+                updateStats(confirmedUsers);
+                showAdminStatus(`Loaded ${confirmedUsers.length} confirmed users`, 'success');
+            } else {
+                showAdminStatus('Error loading users', 'error');
+            }
+        } catch (error) {
+            showAdminStatus('Network error', 'error');
+        }
+    }
+
+    function updateUsersTable(users) {
+        const tableBody = document.getElementById('usersTableBody');
+        if (!tableBody) return;
+        
+        tableBody.innerHTML = '';
+        
+        if (users.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">
+                        <i class="fas fa-users-slash fa-2x" style="color: #6c757d; margin-bottom: 10px;"></i>
+                        <p>No users found</p>
+            </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        users.forEach(user => {
+            const row = document.createElement('tr');
+            
+            const date = new Date(user.paid_at);
+            const formattedDate = user.paid_at ? date.toLocaleDateString() + ' ' + date.toLocaleTimeString() : 'N/A';
+            
+            // Status badge
+            let statusBadge = '';
+            if (user.status === 'completed') {
+                statusBadge = `<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 12px; font-size: 12px;">
+                    <i class="fas fa-check-circle"></i> Paid
+                </span>`;
+            } else if (user.status === 'pending') {
+                statusBadge = `<span style="background: #ffc107; color: #000; padding: 3px 8px; border-radius: 12px; font-size: 12px;">
+                    <i class="fas fa-clock"></i> Pending
+                </span>`;
+            } else {
+                statusBadge = `<span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 12px; font-size: 12px;">
+                    <i class="fas fa-times-circle"></i> ${user.status}
+                </span>`;
+            }
+            
+            // Name display
+            const nameDisplay = user.name === "Not confirmed" ? 
+                `<span style="color: #6c757d;"><i class="fas fa-user-clock"></i> ${user.name}</span>` :
+                `<i class="fas fa-user"></i> ${user.name}`;
+            
+            row.innerHTML = `
+                <td>${statusBadge}</td>
+                <td>${nameDisplay}</td>
+                <td><i class="fab fa-whatsapp" style="color: #25D366;"></i> ${user.whatsapp_number}</td>
+                <td><strong>$${user.amount}</strong></td>
+                <td>${formattedDate}</td>
+                <td id="invite-${user.whatsapp_number.replace('+', '')}">
+                    ${user.name !== "Not confirmed" ? 
+                        `<button onclick="sendInvitationToUser('${user.whatsapp_number}')" 
+                                class="send-invite-btn" style="padding: 5px 10px;">
+                            <i class="fas fa-paper-plane"></i> Send Invite
+                        </button>` :
+                        '<span style="color: #6c757d;">Awaiting confirmation</span>'
+                    }
+                </td>
+                <td>
+                    <button onclick="copyNumber('${user.whatsapp_number}')" 
+                            style="background: #6c757d; color: white; border: none; 
+                                   padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px;">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+    }
+
+    function updateStats(users) {
+        const totalPaid = users.reduce((sum, user) => sum + parseFloat(user.amount), 0);
+        const totalUsers = users.length;
+        
+        const today = new Date().toISOString().split('T')[0];
+        const todayUsers = users.filter(user => user.paid_at && user.paid_at.startsWith(today)).length;
+        
+        document.getElementById('totalPaid').textContent = `$${totalPaid.toFixed(2)}`;
+        document.getElementById('totalUsers').textContent = totalUsers;
+        document.getElementById('todayUsers').textContent = todayUsers;
+    }
+
+    async function sendInvitation() {
+        const number = document.getElementById('invitationNumber').value;
+        const link = document.getElementById('invitationLink').value;
+        
+        if (!validateWhatsAppNumber(number)) {
+            showAdminStatus('Invalid WhatsApp number', 'error');
+            return;
+        }
+        
+        if (!link.includes('chat.whatsapp.com')) {
+            showAdminStatus('Invalid WhatsApp group link', 'error');
+            return;
+        }
+        
+        await sendSingleInvitation(number, link);
+    }
+    
+    function sendInvitationToUser(whatsappNumber) {
+        const link = prompt("Enter WhatsApp group invitation link:", "https://chat.whatsapp.com/");
+        
+        if (link && link.includes('chat.whatsapp.com')) {
+            sendSingleInvitation(whatsappNumber, link);
+        }
+    }
+    
+    async function sendSingleInvitation(whatsappNumber, customLink = null) {
+        const link = customLink || document.getElementById('invitationLink').value;
+        
+        if (!link) {
+            showAdminStatus('Please enter invitation link', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admin/send-invitation`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    whatsapp_number: whatsappNumber,
+                    invitation_link: link
+                })
+            });
+            
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAdminStatus(`Invitation sent to ${whatsappNumber}`, 'success');
+                
+                // Update the cell to show invitation sent
+                const cellId = `invite-${whatsappNumber.replace('+', '')}`;
+                const cell = document.getElementById(cellId);
+                if (cell) {
+                    cell.innerHTML = `
+                        <span style="color: #28a745;">
+                            <i class="fas fa-check-circle"></i> Invitation sent
+                        </span>
+                    `;
+                }
+                
+                // Clear inputs if using main form
+                if (!customLink) {
+                   document.getElementById('invitationNumber').value = '';
+                    document.getElementById('invitationLink').value = '';
+                }
+                
+            } else {
+                showAdminStatus('Error sending invitation: ' + (data.error || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            showAdminStatus('Error sending invitation', 'error');
+            console.error('Invitation error:', error);
+        }
+    }
+
+    function copyNumber(number) {
+        navigator.clipboard.writeText(number)
+            .then(() => {
+                showAdminStatus('Number copied to clipboard', 'success');
+            })
+            .catch(err => {
+                console.error('Copy failed:', err);
+                showAdminStatus('Failed to copy', 'error');
+            });
+    }
+
+    function refreshUsers() {
+        loadAllUsers();
+    }
+    
+    function exportToCSV() {
+        showAdminStatus('Export feature coming soon', 'info');
+    }
+    
+    function validateWhatsAppNumber(number) {
+        const regex = /^\+[1-9]\d{1,14}$/;
+        return regex.test(number);
+    }
+    
+    function showAdminStatus(message, type = 'info') {
+        const statusElement = document.getElementById('adminStatus');
+        
+        if (statusElement) {
+            statusElement.textContent = message;
+            statusElement.className = 'status-message ' + type;
+            statusElement.style.display = 'block';
+            
+            if (type !== 'info') {
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 5000);
+            }
+        }
+    }
+      
+    </script>
+</body>
+</html>
