@@ -1,11 +1,6 @@
-Flask==2.3.3
-Flask-SocketIO==5.3.4
-python-socketio==5.9.0
-eventlet==0.33.3
-Werkzeug==2.3.7
-cython==3.0.10
-gunicorn==21.2.0
-Flask-Cors==4.0.0
-flask-sock==0.6.0
-python-dotenv==1.0.0
-setuptools==68.2.2
+Flask
+Flask-CORS
+python-dotenv
+requests
+sqlite3
+gunicorn
