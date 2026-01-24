@@ -126,7 +126,7 @@ def admin_get_paid_users():
 
 @app.route('/api/pesapal/ipn', methods=['GET', 'POST'])
 def pesapal_ipn():
-	return jsonify({'status': 'received'})
+	return jsonify({'status': 'received'}), 200
 
 @app.route('/logout')
 def logout():
